@@ -38,21 +38,29 @@ public class VehicleController : MonoBehaviour
     [Tooltip("Radius efek: BlueCar di dalam radius ini akan dipaksa minggir/berhenti.")]
     public float ambulanceRadius = 4f;
 
+    [Header("Pengaturan Belokan")]
+    [Tooltip("Ukuran 1 grid di dalam Unity scene kamu.")]
+    public float gridSize = 1f; 
+
     // ------------------------------------------------------------
     // STATE INTERNAL
     // ------------------------------------------------------------
     private Rigidbody2D rb;
-    private bool isStoppedByTraffic;   // true jika BlueCar berhenti karena raycast
-    private bool isStoppedByAmbulance; // true jika dipaksa berhenti oleh GreenAmbulance
+    public bool isStoppedByTraffic;   
+    public bool isStoppedByAmbulance; 
+
+    // Variabel untuk melacak penundaan belokan
+    private bool pendingTurn = false;
+    private float distanceToTurn = 0f;
+    private float targetTurnAngle = 0f;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
-        rb.gravityScale = 0f;                              // top-down, tidak butuh gravity
-        rb.constraints = RigidbodyConstraints2D.FreezeRotation; // biar box tidak muter random pas nabrak
+        rb.gravityScale = 0f;                              
+        rb.constraints = RigidbodyConstraints2D.FreezeRotation; 
     }
 
-    // Dipanggil Editor saat komponen pertama kali ditambahkan / lewat context menu "Reset"
     void Reset()
     {
         ApplyDefaultSpeedByType();
@@ -62,10 +70,10 @@ public class VehicleController : MonoBehaviour
     {
         switch (vehicleType)
         {
-            case VehicleType.RedCar: speed = 8f; break; // cepat
-            case VehicleType.BlueCar: speed = 4f; break; // sedang
-            case VehicleType.YellowTruck: speed = 1.5f; break; // sangat lambat
-            case VehicleType.GreenAmbulance: speed = 6f; break; // cepat, tidak direm siapapun
+            case VehicleType.RedCar: speed = 8f; break; 
+            case VehicleType.BlueCar: speed = 4f; break; 
+            case VehicleType.YellowTruck: speed = 1.5f; break; 
+            case VehicleType.GreenAmbulance: speed = 6f; break; 
         }
     }
 
@@ -76,29 +84,20 @@ public class VehicleController : MonoBehaviour
             case VehicleType.RedCar:
                 HandleRedCar();
                 break;
-
             case VehicleType.BlueCar:
-                // Reset flag ambulance duluan di sini, nanti GreenAmbulance yang men-set ulang
-                // di LateUpdate (biar urutan eksekusi antar GameObject tidak jadi masalah).
                 isStoppedByAmbulance = false;
                 HandleBlueCar();
                 break;
-
             case VehicleType.YellowTruck:
                 HandleYellowTruck();
                 break;
-
             case VehicleType.GreenAmbulance:
-                // Logika deteksi radius dilakukan di LateUpdate, lihat di bawah.
                 isStoppedByTraffic = false;
                 isStoppedByAmbulance = false;
                 break;
         }
     }
 
-    // LateUpdate berjalan SETELAH semua Update() objek lain selesai.
-    // Ini memastikan flag "dipaksa berhenti" dari Ambulance tidak ke-overwrite
-    // oleh reset flag milik BlueCar sendiri, apapun urutan Script Execution Order-nya.
     void LateUpdate()
     {
         if (vehicleType == VehicleType.GreenAmbulance)
@@ -111,7 +110,49 @@ public class VehicleController : MonoBehaviour
     {
         bool bolehJalan = !isStoppedByTraffic && !isStoppedByAmbulance;
         rb.linearVelocity = bolehJalan ? (Vector2)transform.up * speed : Vector2.zero;
-        // Catatan: jika pakai Unity versi lama, ganti "linearVelocity" jadi "velocity".
+        
+        // Proses penundaan belokan (kiri atau kanan)
+        if (pendingTurn && bolehJalan)
+        {
+            // Kurangi jarak tempuh sesuai kecepatan dan waktu
+            distanceToTurn -= speed * Time.fixedDeltaTime;
+            
+            if (distanceToTurn <= 0f)
+            {
+                // Eksekusi rotasi sesuai target sudut
+                transform.Rotate(0, 0, targetTurnAngle);
+                pendingTurn = false;
+            }
+        }
+    }
+
+    // ------------------------------------------------------------
+    // DETEKSI NODE PEREMPATAN
+    // ------------------------------------------------------------
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        // Pastikan triangle memiliki Tag "TurnNode" dan belum ada belokan yang antre
+        if (collision.CompareTag("TurnNode") && !pendingTurn)
+        {
+            // 0 = Lurus, 1 = Kiri, 2 = Kanan
+            int randomDir = Random.Range(0, 3);
+
+            if (randomDir == 1) 
+            {
+                // Kiri: Maju 1 grid dulu baru belok
+                pendingTurn = true;
+                distanceToTurn = 1.05f * gridSize;
+                targetTurnAngle = 90f;
+            }
+            else if (randomDir == 2)
+            {
+                // Kanan: Maju 2 grid dulu baru belok
+                pendingTurn = true;
+                distanceToTurn = 1.6f * gridSize;
+                targetTurnAngle = -90f;
+            }
+            // Jika randomDir == 0 (Lurus), pendingTurn tetap false dan mobil tidak berotasi
+        }
     }
 
     // ------------------------------------------------------------
@@ -120,31 +161,31 @@ public class VehicleController : MonoBehaviour
 
     private void HandleRedCar()
     {
-        // RedCar cuek total sama raycast, tidak pernah ngerem.
-        // Kalau nabrak, itu jadi tanggung jawab script collision terpisah nanti.
         isStoppedByTraffic = false;
     }
 
     private void HandleBlueCar()
     {
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, transform.up, raycastDistance, vehicleLayerMask);
+        // Sesuaikan nilai 0.6f ini dengan ukuran mobilmu, 
+        // pastikan posisinya berada tepat di luar collider depan mobil.
+        float rayStartOffset = 0.6f; 
+        Vector2 startPos = (Vector2)transform.position + (Vector2)transform.up * rayStartOffset;
+        
+        RaycastHit2D hit = Physics2D.Raycast(startPos, transform.up, raycastDistance, vehicleLayerMask);
 
-        // Debug visual di Scene view: merah = ada halangan, hijau = jalur aman
-        Debug.DrawRay(transform.position, transform.up * raycastDistance,
-            hit.collider != null ? Color.red : Color.green);
+        // Debug sekarang dimulai dari moncong mobil
+        Debug.DrawRay(startPos, transform.up * raycastDistance, hit.collider != null ? Color.red : Color.green);
 
         isStoppedByTraffic = (hit.collider != null && hit.distance <= stoppingDistance);
     }
 
     private void HandleYellowTruck()
     {
-        // Truk kuning tidak peduli raycast sama sekali, cuma melaju pelan terus.
         isStoppedByTraffic = false;
     }
 
     private void HandleGreenAmbulance()
     {
-        // Cari semua kendaraan dalam radius efek ambulance
         Collider2D[] nearby = Physics2D.OverlapCircleAll(transform.position, ambulanceRadius, vehicleLayerMask);
 
         foreach (Collider2D col in nearby)
@@ -157,16 +198,11 @@ public class VehicleController : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Dipanggil dari GreenAmbulance untuk memaksa BlueCar minggir/berhenti.
-    /// Public supaya bisa diakses antar-script.
-    /// </summary>
     public void ForceStopByAmbulance(bool stop)
     {
         isStoppedByAmbulance = stop;
     }
 
-    // Gizmo bantu visual radius ambulance di Scene view (tidak muncul saat build)
     void OnDrawGizmosSelected()
     {
         if (vehicleType == VehicleType.GreenAmbulance)
