@@ -15,6 +15,7 @@ public class GameManager : MonoBehaviour
     [Header("UI Referensi")]
     public TextMeshProUGUI teksSkor;
     public TextMeshProUGUI teksNyawa;
+    public TextMeshProUGUI teksPanelLose;
     
     [Tooltip("Masukkan panel/objek image pop-up Game Over dari Canvas ke sini")]
     public GameObject gameOverPanel; 
@@ -70,7 +71,8 @@ public class GameManager : MonoBehaviour
     }
 
     private void TriggerGameOver()
-    {
+    {   
+        teksPanelLose.text = "Score : " + skor.ToString();
         isGameOver = true;
         Debug.Log("GAME OVER!");
 
@@ -78,6 +80,8 @@ public class GameManager : MonoBehaviour
         if (gameOverPanel != null)
         {
             gameOverPanel.SetActive(true);
+            teksSkor.gameObject.SetActive(false);
+            teksNyawa.gameObject.SetActive(false);
         }
 
         // Hentikan semua pergerakan physics dan waktu
@@ -88,7 +92,7 @@ public class GameManager : MonoBehaviour
     {
         if (teksSkor != null)
         {
-            teksSkor.text = "Skor: " + skor.ToString();
+            teksSkor.text = "Score: " + skor.ToString();
         }
         
         if (teksNyawa != null)
