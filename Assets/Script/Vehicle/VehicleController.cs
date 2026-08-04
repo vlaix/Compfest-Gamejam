@@ -36,6 +36,8 @@ public class VehicleController : MonoBehaviour
     private bool isStoppedByNode = false;
     private float nodeStopTimer = 0f;
 
+    private float honkTimer = 0f;
+
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -134,6 +136,8 @@ public class VehicleController : MonoBehaviour
                 {
                     isStoppedByNode = true;
                     nodeStopTimer = 2f; 
+
+                    if (AudioManager.Instance != null) AudioManager.Instance.PlayBrake();
                 }
                 stopNode.ResetStopMode(); 
             }
@@ -194,9 +198,22 @@ public class VehicleController : MonoBehaviour
         Vector2 startPos = (Vector2)transform.position + (Vector2)transform.up * rayStartOffset;
         
         RaycastHit2D hit = Physics2D.Raycast(startPos, transform.up, raycastDistance, vehicleLayerMask);
-        Debug.DrawRay(startPos, transform.up * raycastDistance, hit.collider != null ? Color.red : Color.green);
 
-        isStoppedByTraffic = (hit.collider != null && hit.distance <= stoppingDistance);
+        if (hit.collider != null && hit.distance <= stoppingDistance)
+        {
+            isStoppedByTraffic = true;
+            
+            // Cek apakah jeda klakson sudah lewat (setiap 2 detik sekali)
+            if (Time.time >= honkTimer)
+            {
+                if (AudioManager.Instance != null) AudioManager.Instance.PlayHonk();
+                honkTimer = Time.time + 2f;
+            }
+        }
+            else
+        {
+            isStoppedByTraffic = false;
+        }
     }
 
     private void HandleYellowTruck()

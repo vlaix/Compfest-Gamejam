@@ -14244,6 +14244,54 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!1 &1756752057
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1756752059}
+  - component: {fileID: 1756752058}
+  m_Layer: 0
+  m_Name: AudioManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1756752058
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1756752057}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e60534e0266323c4ebc89e2281a7f706, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  brakeClip: {fileID: 8300000, guid: 8e0247e09e6416b41bc3b289f013fac5, type: 3}
+  crashClip: {fileID: 8300000, guid: de535636d68dcd6439072b30f5b45f42, type: 3}
+  exitClip: {fileID: 8300000, guid: 2422871063171174ea348b0e3a39e856, type: 3}
+  honkClip: {fileID: 8300000, guid: 0170495ebda06b94e90a5f791de7d2f6, type: 3}
+--- !u!4 &1756752059
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1756752057}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1792118430
 GameObject:
   m_ObjectHideFlags: 0
@@ -15013,3 +15061,4 @@ SceneRoots:
   - {fileID: 1946970962}
   - {fileID: 1341768701}
   - {fileID: 1829994825}
+  - {fileID: 1756752059}

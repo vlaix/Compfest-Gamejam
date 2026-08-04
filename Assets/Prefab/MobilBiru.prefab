@@ -178,8 +178,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleType: 1
   speed: 4
-  raycastDistance: 2
-  stoppingDistance: 1.5
+  raycastDistance: 5
+  stoppingDistance: 3
   vehicleLayerMask:
     serializedVersion: 2
     m_Bits: 64

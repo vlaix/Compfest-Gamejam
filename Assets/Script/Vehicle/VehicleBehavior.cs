@@ -25,6 +25,8 @@ public class VehicleBehavior : MonoBehaviour
                 GameManager.Instance.KurangiNyawa();
             }
 
+            if (AudioManager.Instance != null) AudioManager.Instance.PlayCrash();
+
             // Hancurkan kedua mobil secara langsung
             Destroy(collision.gameObject);
             Destroy(gameObject);
@@ -40,6 +42,8 @@ public class VehicleBehavior : MonoBehaviour
             {
                 GameManager.Instance.TambahSkor();
             }
+
+            if (AudioManager.Instance != null) AudioManager.Instance.PlayExit();
             
             // Hancurkan mobil yang sudah keluar layar
             Destroy(gameObject);
