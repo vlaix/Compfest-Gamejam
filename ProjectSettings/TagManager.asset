@@ -5,6 +5,8 @@ TagManager:
   serializedVersion: 3
   tags:
   - TurnNode
+  - Vehicle
+  - StopNode
   layers:
   - Default
   - TransparentFX
@@ -13,7 +15,7 @@ TagManager:
   - Water
   - UI
   - Vehicle
-  - 
+  - RoadArea
   - 
   - 
   - 

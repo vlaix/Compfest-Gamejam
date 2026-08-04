@@ -1,94 +1,99 @@
 using UnityEngine;
+using TMPro;
 
-/// <summary>
-/// Chaos Conductor - GameManager
-/// Pusat kontrol state game: skor, nyawa, dan kondisi game over.
-/// Menggunakan pola Singleton agar bisa diakses dari script manapun
-/// lewat GameManager.Instance.
-/// </summary>
 public class GameManager : MonoBehaviour
 {
-    // ------------------------------------------------------------
-    // SINGLETON
-    // ------------------------------------------------------------
-    public static GameManager Instance;
+    public static GameManager Instance { get; private set; }
 
-    [Header("Game State")]
-    public int score = 0;
-    public int lives = 3;
+    [Header("Status Pemain")]
+    public int nyawa = 3; 
+    private int skor = 0; 
+    
+    // Status ini bisa dibaca oleh script lain (seperti spawner)
+    public bool isGameOver = false; 
 
-    private bool isGameOver = false;
+    [Header("UI Referensi")]
+    public TextMeshProUGUI teksSkor;
+    public TextMeshProUGUI teksNyawa;
+    
+    [Tooltip("Masukkan panel/objek image pop-up Game Over dari Canvas ke sini")]
+    public GameObject gameOverPanel; 
 
-    void Awake()
+    private void Awake()
     {
-        // Pastikan hanya ada 1 GameManager aktif di scene.
         if (Instance == null)
         {
             Instance = this;
         }
         else
         {
-            Debug.LogWarning("GameManager: instance lain terdeteksi, menghapus duplikat.");
             Destroy(gameObject);
         }
     }
 
-    // ------------------------------------------------------------
-    // SKOR
-    // ------------------------------------------------------------
-
-    /// <summary>
-    /// Dipanggil saat kendaraan berhasil keluar layar dengan selamat (lihat VehicleBehaviour.OnBecameInvisible).
-    /// </summary>
-    public void TambahSkor()
+    private void Start()
     {
-        if (isGameOver) return;
+        // Pastikan waktu berjalan normal saat mulai ulang game
+        Time.timeScale = 1f; 
+        isGameOver = false;
 
-        score++;
-        Debug.Log($"[GameManager] Skor bertambah! Skor sekarang: {score}");
+        // Sembunyikan panel pop-up di awal permainan
+        if (gameOverPanel != null)
+        {
+            gameOverPanel.SetActive(false);
+        }
+
+        UpdateUI();
     }
 
-    // ------------------------------------------------------------
-    // NYAWA
-    // ------------------------------------------------------------
+    public void TambahSkor()
+    {
+        // Jangan tambah skor kalau sudah kalah
+        if (isGameOver) return; 
 
-    /// <summary>
-    /// Dipanggil saat terjadi kecelakaan/kegagalan (lihat VehicleBehaviour.OnCollisionEnter2D).
-    /// </summary>
+        skor += 1;
+        UpdateUI();
+    }
+
     public void KurangiNyawa()
     {
-        if (isGameOver) return;
+        // Cegah nyawa terus berkurang setelah kalah
+        if (isGameOver) return; 
 
-        lives--;
-        Debug.Log($"[GameManager] Nyawa berkurang! Sisa nyawa: {lives}");
+        nyawa -= 1;
+        UpdateUI();
 
-        if (lives <= 0)
+        if (nyawa <= 0)
         {
-            HandleGameOver();
+            TriggerGameOver();
         }
     }
 
-    // ------------------------------------------------------------
-    // GAME OVER
-    // ------------------------------------------------------------
-
-    private void HandleGameOver()
+    private void TriggerGameOver()
     {
         isGameOver = true;
-        Debug.Log($"[GameManager] GAME OVER! Skor akhir: {score}");
+        Debug.Log("GAME OVER!");
 
-        // Hentikan waktu di seluruh game (semua Update yang bergantung pada Time.deltaTime
-        // otomatis "berhenti" secara visual, physics juga ikut berhenti).
+        // Munculkan pop-up / image kekalahan
+        if (gameOverPanel != null)
+        {
+            gameOverPanel.SetActive(true);
+        }
+
+        // Hentikan semua pergerakan physics dan waktu
         Time.timeScale = 0f;
-
-        // TODO: tampilkan UI "Game Over" / panel restart di sini kalau sudah ada sistem UI-nya.
     }
 
-    /// <summary>
-    /// Helper opsional untuk cek dari script lain apakah game sudah berakhir.
-    /// </summary>
-    public bool IsGameOver()
+    private void UpdateUI()
     {
-        return isGameOver;
+        if (teksSkor != null)
+        {
+            teksSkor.text = "Skor: " + skor.ToString();
+        }
+        
+        if (teksNyawa != null)
+        {
+            teksNyawa.text = "Nyawa: " + nyawa.ToString();
+        }
     }
 }

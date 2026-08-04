@@ -49,11 +49,12 @@ public class VehicleController : MonoBehaviour
     // STATE INTERNAL
     // ------------------------------------------------------------
     private Rigidbody2D rb;
-    private Collider2D vehicleCollider; // dipakai untuk menggeser origin raycast keluar dari collider sendiri
-    private bool isStoppedByTraffic;   // true jika BlueCar berhenti karena raycast
-    private bool isStoppedByAmbulance; // true jika dipaksa berhenti oleh GreenAmbulance
-    private bool isStoppedByNode;      // true jika sedang berhenti sementara akibat Stop Node
-    private Coroutine stopNodeRoutine;
+    private bool isStoppedByTraffic;   
+    private bool isStoppedByAmbulance;
+
+    // Variabel untuk melacak berhenti
+    private bool isStoppedByNode = false;
+    private float nodeStopTimer = 0f; 
 
     private bool isTurning;            // true selama proses belok halus akibat Turn Node
     private float targetRotationZ;     // sudut rotasi (derajat) yang dituju saat berbelok
@@ -123,13 +124,37 @@ public class VehicleController : MonoBehaviour
         }
     }
 
-    void FixedUpdate()
+void FixedUpdate()
     {
+        // KURANGI TIMER JIKA SEDANG DITAHAN NODE
+        if (isStoppedByNode)
+        {
+            nodeStopTimer -= Time.fixedDeltaTime;
+            if (nodeStopTimer <= 0f)
+            {
+                isStoppedByNode = false; // Waktu habis, mobil boleh jalan lagi
+            }
+        }
+
+        // Kendaraan boleh jalan jika tidak ditahan oleh apa pun (termasuk timer node)
         bool bolehJalan = !isStoppedByTraffic && !isStoppedByAmbulance && !isStoppedByNode;
         rb.linearVelocity = bolehJalan ? (Vector2)transform.up * speed : Vector2.zero;
-        // Catatan: jika pakai Unity versi lama, ganti "linearVelocity" jadi "velocity".
-
-        HandleSmoothTurning();
+        
+        // KOMPENSASI JARAK BELOK
+        if (pendingTurn && bolehJalan)
+        {
+            distanceToTurn -= speed * Time.fixedDeltaTime;
+            
+            if (distanceToTurn <= 0f)
+            {
+                float kelebihanJarak = -distanceToTurn;
+                transform.position -= transform.up * kelebihanJarak;
+                transform.Rotate(0, 0, targetTurnAngle);
+                transform.position += transform.up * kelebihanJarak;
+                
+                pendingTurn = false;
+            }
+        }
     }
 
     // ------------------------------------------------------------
@@ -137,18 +162,50 @@ public class VehicleController : MonoBehaviour
     // Rotasi kendaraan didekatkan sedikit demi sedikit ke targetRotationZ
     // setiap FixedUpdate, bukan langsung snap 90 derajat.
     // ------------------------------------------------------------
-    private void HandleSmoothTurning()
+private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (!isTurning) return;
-
-        float currentZ = rb.rotation;
-        float newZ = Mathf.MoveTowardsAngle(currentZ, targetRotationZ, turnSpeed * Time.fixedDeltaTime);
-        rb.MoveRotation(newZ);
-
-        // Selesai berbelok kalau sudah (hampir) sampai di sudut target
-        if (Mathf.Approximately(Mathf.DeltaAngle(newZ, targetRotationZ), 0f))
+        if (collision.CompareTag("TurnNode") && !pendingTurn)
         {
-            isTurning = false;
+            TurnNodeController node = collision.GetComponent<TurnNodeController>();
+            if (node == null) return;
+
+            // CEK APAKAH SEGITIGA BERWARNA MERAH (MODE BERHENTI)
+            if (node.isStopMode)
+            {
+                // Truk kuning kebal terhadap efek berhenti
+                if (vehicleType != VehicleType.YellowTruck)
+                {
+                    isStoppedByNode = true;
+                    nodeStopTimer = 2f; // Tahan selama 2 detik
+                }
+                
+                // Segitiga tetap dikembalikan warnanya agar kereset, 
+                // meskipun yang menabrak adalah truk kuning
+                node.ResetStopMode(); 
+            }
+
+            // KALKULASI ARAH BELOKAN
+            Vector2 carDirection = transform.up;
+            Vector2 nodeDirection = collision.transform.up;
+
+            float angleDiff = Vector2.SignedAngle(carDirection, nodeDirection);
+            angleDiff = Mathf.Round(angleDiff);
+
+            if (angleDiff == 90f) 
+            {
+                pendingTurn = true;
+                distanceToTurn = 0.62f * gridSize;
+                targetTurnAngle = 90f;
+            }
+            else if (angleDiff == -90f)
+            {
+                pendingTurn = true;
+                distanceToTurn = 1.1f * gridSize;
+                targetTurnAngle = -90f;
+            }
+            
+            // Kembalikan rotasi segitiga seperti semula
+            node.ResetToInitialRotation();
         }
     }
 
@@ -226,7 +283,7 @@ public class VehicleController : MonoBehaviour
     /// Memicu belokan halus 90 derajat. Kendaraan tetap jalan selama berbelok,
     /// rotasinya didekatkan bertahap tiap FixedUpdate lewat HandleSmoothTurning().
     /// </summary>
-    /// <param name="turnLeft">true = belok kiri (+90°), false = belok kanan (-90°)</param>
+    /// <param name="turnLeft">true = belok kiri (+90ï¿½), false = belok kanan (-90ï¿½)</param>
     public void TriggerTurn(bool turnLeft)
     {
         float delta = turnLeft ? 90f : -90f;
