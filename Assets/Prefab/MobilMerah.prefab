@@ -177,7 +177,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   vehicleType: 0
-  speed: 8
+  speed: 6
   raycastDistance: 2
   stoppingDistance: 1.5
   vehicleLayerMask:
