@@ -2,8 +2,8 @@ using UnityEngine;
 
 public class VehicleBehavior : MonoBehaviour
 {
-    private bool isDead = false;
-
+    // Pengaman agar nyawa tidak berkurang dua kali dalam satu kali tabrakan
+    private bool isDead = false; 
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
