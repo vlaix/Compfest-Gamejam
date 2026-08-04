@@ -1,10 +1,9 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using System.Collections; // Wajib ditambahkan untuk Coroutine
 
 /// <summary>
 /// Chaos Conductor - PauseMenuManager
-/// Toggle Pause/Resume lewat ESC, tapi menghindari bentrok dengan PlayerInteraction
-/// yang juga memakai ESC untuk membatalkan mode tahan-klik (slow motion).
 /// </summary>
 public class PauseMenuManager : MonoBehaviour
 {
@@ -12,8 +11,11 @@ public class PauseMenuManager : MonoBehaviour
     public GameObject pausePanel;
 
     [Header("Referensi Script Lain")]
-    [Tooltip("Dipakai untuk cek apakah pemain sedang menahan klik (mode slow-mo), supaya ESC tidak bentrok.")]
     public PlayerInteraction playerInteraction;
+
+    [Header("Audio")]
+    public AudioSource sfxSource;
+    public AudioClip buttonClickSfx;
 
     private bool isPaused = false;
 
@@ -21,10 +23,6 @@ public class PauseMenuManager : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            // PENTING: PlayerInteraction JUGA memakai ESC untuk membatalkan mode tahan-klik (slow motion).
-            // Kalau pemain sedang menahan klik (isPlacingNode true), ESC di frame ini adalah
-            // milik PlayerInteraction (cancel placement) -> Pause Menu diabaikan dulu.
-            // Baru kalau pemain TIDAK sedang menahan klik, ESC dianggap untuk toggle Pause Menu.
             bool sedangModeSlowMo = playerInteraction != null && playerInteraction.IsPlacingNode;
             if (sedangModeSlowMo) return;
 
@@ -47,6 +45,7 @@ public class PauseMenuManager : MonoBehaviour
 
     public void ResumeGame()
     {
+        PlayButtonSFX(); // Mainkan suara klik saat resume
         isPaused = false;
         if (pausePanel != null) pausePanel.SetActive(false);
         Time.timeScale = 1f;
@@ -54,7 +53,22 @@ public class PauseMenuManager : MonoBehaviour
 
     public void LoadMainMenu()
     {
-        Time.timeScale = 1f; // penting: reset dulu biar scene Main Menu tidak ikut freeze
+        StartCoroutine(LoadMainMenuRoutine());
+    }
+
+    private IEnumerator LoadMainMenuRoutine()
+    {
+        PlayButtonSFX(); // Mainkan suara klik saat mau kembali ke menu
+        Time.timeScale = 1f; // Reset timeScale dulu
+        yield return new WaitForSecondsRealtime(0.2f); // Tunggu suara selesai
         SceneManager.LoadScene(0);
+    }
+
+    public void PlayButtonSFX()
+    {
+        if (sfxSource != null && buttonClickSfx != null)
+        {
+            sfxSource.PlayOneShot(buttonClickSfx);
+        }
     }
 }
