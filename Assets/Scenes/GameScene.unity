@@ -628,8 +628,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b244a44cc9f9305428fd4e9bcccb6f83, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  score: 0
-  lives: 3
+  nyawa: 3
+  isGameOver: 0
+  teksSkor: {fileID: 0}
+  teksNyawa: {fileID: 0}
+  gameOverPanel: {fileID: 0}
 --- !u!4 &178929810
 Transform:
   m_ObjectHideFlags: 0
@@ -10425,7 +10428,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1215183730
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12232,7 +12235,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   pausePanel: {fileID: 1215183729}
-  playerInteraction: {fileID: 0}
   sfxSource: {fileID: 1746203732}
   buttonClickSfx: {fileID: 8300000, guid: 2bbd590253dd30147beeff4434878ca1, type: 3}
 --- !u!4 &1746203731
