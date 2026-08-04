@@ -51,6 +51,12 @@ public class PlayerInteraction : MonoBehaviour
     private GameObject previewInstance;
     private GameObject previewSourcePrefab; // dipakai untuk cek apakah tipe node berubah (misal dari "belum jelas" ke "Turn Left")
 
+    /// <summary>
+    /// Dipakai script lain (misal PauseMenuManager) untuk cek apakah pemain sedang
+    /// menahan klik / dalam mode slow-mo, supaya input ESC tidak bentrok.
+    /// </summary>
+    public bool IsPlacingNode => isPlacingNode;
+
     void Update()
     {
         // --- Batal (Escape) - dicek duluan supaya prioritas di atas input mouse ---
