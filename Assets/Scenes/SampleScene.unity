@@ -689,6 +689,7 @@ MonoBehaviour:
   slowMotionScale: 0.2
   gridSize: 1
   dragThreshold: 20
+  previewAlpha: 0.4
 --- !u!4 &647872313
 Transform:
   m_ObjectHideFlags: 0
@@ -1182,6 +1183,10 @@ PrefabInstance:
     - target: {fileID: 3125006896537120730, guid: 038153a0c127025439f4e77a09f20305, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3331596835304011676, guid: 038153a0c127025439f4e77a09f20305, type: 3}
+      propertyPath: spawnInterval
+      value: 1.5
       objectReference: {fileID: 0}
     - target: {fileID: 3331596835304011676, guid: 038153a0c127025439f4e77a09f20305, type: 3}
       propertyPath: spawnPoints.Array.size
