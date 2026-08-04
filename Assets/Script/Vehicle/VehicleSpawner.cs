@@ -23,6 +23,13 @@ public class VehicleSpawner : MonoBehaviour
 
     void Update()
     {
+        // Cek apakah game sudah over melalui GameManager
+        if (GameManager.Instance != null && GameManager.Instance.isGameOver)
+        {
+            // Hentikan proses spawn jika sudah kalah
+            return; 
+        }
+
         timer += Time.deltaTime;
 
         if (timer >= spawnInterval)
@@ -34,26 +41,18 @@ public class VehicleSpawner : MonoBehaviour
 
     private void SpawnVehicle()
     {
-        // Jaga-jaga kalau array belum diisi di Inspector
         if (vehiclePrefabs.Length == 0 || spawnPoints.Length == 0)
         {
             Debug.LogWarning("VehicleSpawner: vehiclePrefabs atau spawnPoints masih kosong!");
             return;
         }
 
-        // 1. Pilih prefab kendaraan secara acak
         GameObject chosenPrefab = vehiclePrefabs[Random.Range(0, vehiclePrefabs.Length)];
-
-        // 2. Pilih titik spawn secara acak
         Transform chosenSpawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
 
-        // 3. Instantiate dengan posisi & ROTASI mengikuti spawn point.
-        //    Ini kuncinya: rotasi spawn point akan jadi rotasi kendaraan,
-        //    jadi transform.up kendaraan otomatis mengarah sesuai arah spawn point menghadap.
         Instantiate(chosenPrefab, chosenSpawnPoint.position, chosenSpawnPoint.rotation);
     }
 
-    // Gizmo bantu: gambar arah "depan" tiap spawn point di Scene view
     void OnDrawGizmos()
     {
         if (spawnPoints == null) return;
@@ -63,7 +62,7 @@ public class VehicleSpawner : MonoBehaviour
         {
             if (sp == null) continue;
             Gizmos.DrawSphere(sp.position, 0.2f);
-            Gizmos.DrawLine(sp.position, sp.position + sp.up * 1.5f); // panah arah gerak
+            Gizmos.DrawLine(sp.position, sp.position + sp.up * 1.5f);
         }
     }
 }

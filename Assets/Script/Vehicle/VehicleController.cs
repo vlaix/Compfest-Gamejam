@@ -46,8 +46,12 @@ public class VehicleController : MonoBehaviour
     // STATE INTERNAL
     // ------------------------------------------------------------
     private Rigidbody2D rb;
-    public bool isStoppedByTraffic;   
-    public bool isStoppedByAmbulance; 
+    private bool isStoppedByTraffic;   
+    private bool isStoppedByAmbulance;
+
+    // Variabel untuk melacak berhenti
+    private bool isStoppedByNode = false;
+    private float nodeStopTimer = 0f; 
 
     // Variabel untuk melacak penundaan belokan
     private bool pendingTurn = false;
@@ -106,21 +110,34 @@ public class VehicleController : MonoBehaviour
         }
     }
 
-    void FixedUpdate()
+void FixedUpdate()
     {
-        bool bolehJalan = !isStoppedByTraffic && !isStoppedByAmbulance;
+        // KURANGI TIMER JIKA SEDANG DITAHAN NODE
+        if (isStoppedByNode)
+        {
+            nodeStopTimer -= Time.fixedDeltaTime;
+            if (nodeStopTimer <= 0f)
+            {
+                isStoppedByNode = false; // Waktu habis, mobil boleh jalan lagi
+            }
+        }
+
+        // Kendaraan boleh jalan jika tidak ditahan oleh apa pun (termasuk timer node)
+        bool bolehJalan = !isStoppedByTraffic && !isStoppedByAmbulance && !isStoppedByNode;
         rb.linearVelocity = bolehJalan ? (Vector2)transform.up * speed : Vector2.zero;
         
-        // Proses penundaan belokan (kiri atau kanan)
+        // KOMPENSASI JARAK BELOK
         if (pendingTurn && bolehJalan)
         {
-            // Kurangi jarak tempuh sesuai kecepatan dan waktu
             distanceToTurn -= speed * Time.fixedDeltaTime;
             
             if (distanceToTurn <= 0f)
             {
-                // Eksekusi rotasi sesuai target sudut
+                float kelebihanJarak = -distanceToTurn;
+                transform.position -= transform.up * kelebihanJarak;
                 transform.Rotate(0, 0, targetTurnAngle);
+                transform.position += transform.up * kelebihanJarak;
+                
                 pendingTurn = false;
             }
         }
@@ -129,29 +146,50 @@ public class VehicleController : MonoBehaviour
     // ------------------------------------------------------------
     // DETEKSI NODE PEREMPATAN
     // ------------------------------------------------------------
-    private void OnTriggerEnter2D(Collider2D collision)
+private void OnTriggerEnter2D(Collider2D collision)
     {
-        // Pastikan triangle memiliki Tag "TurnNode" dan belum ada belokan yang antre
         if (collision.CompareTag("TurnNode") && !pendingTurn)
         {
-            // 0 = Lurus, 1 = Kiri, 2 = Kanan
-            int randomDir = Random.Range(0, 3);
+            TurnNodeController node = collision.GetComponent<TurnNodeController>();
+            if (node == null) return;
 
-            if (randomDir == 1) 
+            // CEK APAKAH SEGITIGA BERWARNA MERAH (MODE BERHENTI)
+            if (node.isStopMode)
             {
-                // Kiri: Maju 1 grid dulu baru belok
+                // Truk kuning kebal terhadap efek berhenti
+                if (vehicleType != VehicleType.YellowTruck)
+                {
+                    isStoppedByNode = true;
+                    nodeStopTimer = 2f; // Tahan selama 2 detik
+                }
+                
+                // Segitiga tetap dikembalikan warnanya agar kereset, 
+                // meskipun yang menabrak adalah truk kuning
+                node.ResetStopMode(); 
+            }
+
+            // KALKULASI ARAH BELOKAN
+            Vector2 carDirection = transform.up;
+            Vector2 nodeDirection = collision.transform.up;
+
+            float angleDiff = Vector2.SignedAngle(carDirection, nodeDirection);
+            angleDiff = Mathf.Round(angleDiff);
+
+            if (angleDiff == 90f) 
+            {
                 pendingTurn = true;
-                distanceToTurn = 1.05f * gridSize;
+                distanceToTurn = 0.62f * gridSize;
                 targetTurnAngle = 90f;
             }
-            else if (randomDir == 2)
+            else if (angleDiff == -90f)
             {
-                // Kanan: Maju 2 grid dulu baru belok
                 pendingTurn = true;
-                distanceToTurn = 1.6f * gridSize;
+                distanceToTurn = 1.1f * gridSize;
                 targetTurnAngle = -90f;
             }
-            // Jika randomDir == 0 (Lurus), pendingTurn tetap false dan mobil tidak berotasi
+            
+            // Kembalikan rotasi segitiga seperti semula
+            node.ResetToInitialRotation();
         }
     }
 
