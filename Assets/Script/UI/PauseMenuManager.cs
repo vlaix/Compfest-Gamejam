@@ -10,9 +10,6 @@ public class PauseMenuManager : MonoBehaviour
     [Header("Referensi UI")]
     public GameObject pausePanel;
 
-    [Header("Referensi Script Lain")]
-    public PlayerInteraction playerInteraction;
-
     [Header("Audio")]
     public AudioSource sfxSource;
     public AudioClip buttonClickSfx;
@@ -23,9 +20,6 @@ public class PauseMenuManager : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            bool sedangModeSlowMo = playerInteraction != null && playerInteraction.IsPlacingNode;
-            if (sedangModeSlowMo) return;
-
             TogglePause();
         }
     }
