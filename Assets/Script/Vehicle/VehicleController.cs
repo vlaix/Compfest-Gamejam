@@ -124,27 +124,40 @@ public class VehicleController : MonoBehaviour
     // MEMBACA ARAH MONCONG SEGITIGA
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (collision.CompareTag("TurnNode") && !pendingTurn)
+        // 1. CEK JIKA MENYENTUH NODE BERHENTI DI JALAN LURUS
+        if (collision.CompareTag("StopNode"))
         {
-            TurnNodeController node = collision.GetComponent<TurnNodeController>();
-            if (node == null) return;
-
-            // CEK APAKAH SEGITIGA BERWARNA MERAH (MODE BERHENTI)
-            if (node.isStopMode)
+            StopNodeController stopNode = collision.GetComponent<StopNodeController>();
+            if (stopNode != null && stopNode.isStopMode)
             {
-                // Truk kuning kebal terhadap efek berhenti
                 if (vehicleType != VehicleType.YellowTruck)
                 {
                     isStoppedByNode = true;
-                    nodeStopTimer = 2f; // Tahan selama 2 detik
+                    nodeStopTimer = 2f; 
                 }
-                
-                // Segitiga tetap dikembalikan warnanya agar kereset, 
-                // meskipun yang menabrak adalah truk kuning
-                node.ResetStopMode(); 
+                stopNode.ResetStopMode(); 
+            }
+            // Keluar dari fungsi karena node ini tidak untuk belok
+            return; 
+        }
+
+        // 2. CEK JIKA MENYENTUH NODE BELOK DI PEREMPATAN
+        if (collision.CompareTag("TurnNode") && !pendingTurn)
+        {
+            TurnNodeController turnNode = collision.GetComponent<TurnNodeController>();
+            if (turnNode == null) return;
+
+            // Fitur berhenti juga tetap bisa dipakai di perempatan
+            if (turnNode.isStopMode)
+            {
+                if (vehicleType != VehicleType.YellowTruck)
+                {
+                    isStoppedByNode = true;
+                    nodeStopTimer = 2f; 
+                }
+                turnNode.ResetStopMode(); 
             }
 
-            // KALKULASI ARAH BELOKAN
             Vector2 carDirection = transform.up;
             Vector2 nodeDirection = collision.transform.up;
 
@@ -154,18 +167,17 @@ public class VehicleController : MonoBehaviour
             if (angleDiff == 90f) 
             {
                 pendingTurn = true;
-                distanceToTurn = 1f * gridSize;
+                distanceToTurn = 2.65f * gridSize;
                 targetTurnAngle = 90f;
             }
             else if (angleDiff == -90f)
             {
                 pendingTurn = true;
-                distanceToTurn = 2f * gridSize;
+                distanceToTurn = 3.65f * gridSize;
                 targetTurnAngle = -90f;
             }
             
-            // Kembalikan rotasi segitiga seperti semula
-            node.ResetToInitialRotation();
+            turnNode.ResetToInitialRotation();
         }
     }
 
@@ -178,7 +190,7 @@ public class VehicleController : MonoBehaviour
     private void HandleBlueCar()
     {
         // FIX: Offset dimajukan sedikit agar tidak mendeteksi badannya sendiri
-        float rayStartOffset = 0.6f; 
+        float rayStartOffset = 1.15f; 
         Vector2 startPos = (Vector2)transform.position + (Vector2)transform.up * rayStartOffset;
         
         RaycastHit2D hit = Physics2D.Raycast(startPos, transform.up, raycastDistance, vehicleLayerMask);
